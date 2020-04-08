@@ -152,7 +152,7 @@ public:
     }
 };
 
-GPUProgram gpuProgram; // vertex and fragment shaders
+GPUProgram gpuProgram;
 Scene scene;
 
 // vertex shader in GLSL
@@ -213,47 +213,25 @@ public:
 
 FullScreenTexturedQuad * fullScreenTexturedQuad;
 
-// Initialization, create an OpenGL context
 void onInitialization() {
     glViewport(0, 0, windowWidth, windowHeight);
     scene.build();
-
     std::vector<vec4> image(windowWidth * windowHeight);
     long timeStart = glutGet(GLUT_ELAPSED_TIME);
     scene.render(image);
     long timeEnd = glutGet(GLUT_ELAPSED_TIME);
     printf("Rendering time: %d milliseconds\n", (timeEnd - timeStart));
-
-    // copy image to GPU as a texture
     fullScreenTexturedQuad = new FullScreenTexturedQuad(windowWidth, windowHeight, image);
-
-    // create program for the GPU
     gpuProgram.create(vertexSource, fragmentSource, "fragmentColor");
 }
 
-// Window has become invalid: Redraw
 void onDisplay() {
     fullScreenTexturedQuad->Draw();
-    glutSwapBuffers();                                    // exchange the two buffers
+    glutSwapBuffers();
 }
 
-// Key of ASCII code pressed
-void onKeyboard(unsigned char key, int pX, int pY) {
-}
-
-// Key of ASCII code released
-void onKeyboardUp(unsigned char key, int pX, int pY) {
-
-}
-
-// Mouse click event
-void onMouse(int button, int state, int pX, int pY) {
-}
-
-// Move mouse with key pressed
-void onMouseMotion(int pX, int pY) {
-}
-
-// Idle event indicating that some time elapsed: do animation here
-void onIdle() {
-}
+void onKeyboard(unsigned char key, int pX, int pY) {}
+void onKeyboardUp(unsigned char key, int pX, int pY) {}
+void onMouse(int button, int state, int pX, int pY) {}
+void onMouseMotion(int pX, int pY) {}
+void onIdle() {}
