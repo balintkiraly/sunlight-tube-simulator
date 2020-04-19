@@ -28,31 +28,55 @@ public:
     virtual Hit intersect(const Ray& ray) = 0;
 };
 
-struct Sphere : public Intersectable {
+struct Ellipsoid : public Intersectable {
     vec3 center;
-    float radius;
+    float A, B, C;
 
-    Sphere(const vec3& _center, float _radius, Material* _material) {
+    Ellipsoid(const vec3& _center, float _A, float _B, float _C, Material* _material) {
         center = _center;
-        radius = _radius;
+        A = _A;
+        B = _B;
+        C = _C;
         material = _material;
     }
 
     Hit intersect(const Ray& ray) {
         Hit hit;
         vec3 dist = ray.start - center;
-        float a = dot(ray.dir, ray.dir);
-        float b = dot(dist, ray.dir) * 2.0f;
-        float c = dot(dist, dist) - radius * radius;
+
+        float a = powf(ray.dir.x, 2) / (A * A)
+            + (powf(ray.dir.y, 2) / (B * B))
+            + (powf(ray.dir.z, 2) / (C * C));
+        
+        float b = 2.0f * ((dist.x * ray.dir.x) / (A * A)
+            + (dist.y * ray.dir.y) / (B * B)
+            + (dist.z * ray.dir.z) / (C * C));
+        
+        float c = powf(dist.x, 2) / (A * A)
+            + powf(dist.y, 2) / (B * B)
+            + powf(dist.z, 2) / (C * C)
+            - 1.0f;
+        
         float discr = b * b - 4.0f * a * c;
-        if (discr < 0) return hit;
-        float sqrt_discr = sqrtf(discr);
-        float t1 = (-b + sqrt_discr) / 2.0f / a;    // t1 >= t2 for sure
+        if (discr < 0.0f) return hit;
+        
+        float sqrt_discr = sqrt(discr);
+        
+        float t1 = (-b + sqrt_discr) / 2.0f / a;
         float t2 = (-b - sqrt_discr) / 2.0f / a;
-        if (t1 <= 0) return hit;
-        hit.t = (t2 > 0) ? t2 : t1;
+        
+		if (t1 <= 0) return hit;
+        
+		hit.t = (t2 > 0) ? t2 : t1;
         hit.position = ray.start + ray.dir * hit.t;
-        hit.normal = (hit.position - center) * (1.0f / radius);
+
+        hit.normal = normalize(
+            vec3(
+                (hit.position - center).x / (A * A),
+                (hit.position - center).y / (B * B),
+                (hit.position - center).z / (C * C)
+            )
+        ); 
         hit.material = material;
         return hit;
     }
@@ -103,15 +127,14 @@ public:
         vec3 lightDirection(1, 1, 1), Le(2, 2, 2);
         lights.push_back(new Light(lightDirection, Le));
 
-        vec3 kd(0.3f, 0.2f, 0.1f), ks(2, 2, 2);
-        Material * material = new Material(kd, ks, 50);
-        for (int i = 0; i < 500; i++) 
-            objects.push_back(new Sphere(vec3(rnd() - 0.5f, rnd() - 0.5f, rnd() - 0.5f), rnd() * 0.1f, material));
+        vec3 kd2(0.8f, 0.2f, 0.1f), ks2(1, 1, 1);
+        Material * material2 = new Material(kd2, ks2, 50);
+        objects.push_back(new Ellipsoid(vec3(0.0f, 0.0f, 0.0f), 0.2f, 0.1f, 0.3f, material2));        
     }
 
     void render(std::vector<vec4>& image) {
         for (int Y = 0; Y < windowHeight; Y++) {
-#pragma omp parallel for
+            #pragma omp parallel for
             for (int X = 0; X < windowWidth; X++) {
                 vec3 color = trace(camera.getRay(X, Y));
                 image[Y * windowWidth + X] = vec4(color.x, color.y, color.z, 1);
