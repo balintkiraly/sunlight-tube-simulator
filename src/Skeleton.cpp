@@ -165,7 +165,7 @@ public:
         Material * material2 = new RoughMaterial(kd2, ks2, 50); 
         objects.push_back(new Ellipsoid(vec3(-0.1f, 0.2f, 0.0f), 0.1f, 0.3f, 0.4f, material2));
      
-        vec3 n(0.14f, 0.16f, 0.13f), kappa(4.1f, 2.3f, 3.1f);
+        vec3 n(0.17f, 0.35f, 1.5f), kappa(3.1f, 2.7f, 1.9f);
         Material * reflectiveMaterial = new ReflectiveMaterial(n, kappa);
         objects.push_back(new Ellipsoid(vec3(0.4f, 0.25f, 0.4f), 0.2f, 0.5f, 0.3f, reflectiveMaterial));
 
