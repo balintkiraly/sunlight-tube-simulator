@@ -59,7 +59,7 @@ struct Ellipsoid : public Intersectable {
     vec3 center;
     float A, B, C, cutY;
 
-    Ellipsoid(const vec3& _center, float _A, float _B, float _C, Material* _material, float _cutY = 5) {
+    Ellipsoid(const vec3& _center, float _A, float _B, float _C, Material* _material, float _cutY = 1000) {
         center = _center;
         A = _A;
         B = _B;
@@ -157,17 +157,17 @@ public:
         vec3 lightDirection(1, 8, 1), Le(2, 2, 2);
         lights.push_back(new Light(lightDirection, Le));
 
-        vec3 kd1(0.1f, 0.9f, 0.1f), ks1(1, 1, 1);
+        vec3 kd1(0.05f, 0.6f, 0.05f), ks1(1, 1, 1);
         Material * material1 = new RoughMaterial(kd1, ks1, 50);
         objects.push_back(new Ellipsoid(vec3(-0.1f, -0.1f, 1.0f), 0.3f, 0.1f, 0.3f, material1));
 
-        vec3 kd2(0.9f, 0.1f, 0.1f), ks2(1, 1, 1);
+        vec3 kd2(0.7f, 0.2f, 0.2f), ks2(1, 1, 1);
         Material * material2 = new RoughMaterial(kd2, ks2, 50); 
         objects.push_back(new Ellipsoid(vec3(-0.1f, 0.2f, 0.0f), 0.1f, 0.3f, 0.4f, material2));
      
         vec3 n(0.14f, 0.16f, 0.13f), kappa(4.1f, 2.3f, 3.1f);
         Material * reflectiveMaterial = new ReflectiveMaterial(n, kappa);
-        objects.push_back(new Ellipsoid(vec3(0.4f, 0.1f, 0.4f), 0.2f, 0.5f, 0.3f, reflectiveMaterial));
+        objects.push_back(new Ellipsoid(vec3(0.4f, 0.25f, 0.4f), 0.2f, 0.5f, 0.3f, reflectiveMaterial));
 
         vec3 kd3(0.8f, 0.6f, 0.2f), ks3(1, 1, 1);
         Material * material3 = new RoughMaterial(kd3, ks3, 50); 
