@@ -65,9 +65,9 @@ struct Ellipsoid : public Intersectable {
         float t1 = (-b + sqrt_discr) / 2.0f / a;
         float t2 = (-b - sqrt_discr) / 2.0f / a;
         
-		if (t1 <= 0) return hit;
+        if (t1 <= 0) return hit;
         
-		hit.t = (t2 > 0) ? t2 : t1;
+        hit.t = (t2 > 0) ? t2 : t1;
         hit.position = ray.start + ray.dir * hit.t;
 
         hit.normal = normalize(
@@ -119,17 +119,28 @@ class Scene {
     vec3 La;
 public:
     void build() {
-        vec3 eye = vec3(0, 0, 2), vup = vec3(0, 1, 0), lookat = vec3(0, 0, 0);
+        vec3 eye = vec3(0, 2, 2), vup = vec3(0, 0, 1), lookat = vec3(0, 0, 0);
         float fov = 45 * M_PI / 180;
         camera.set(eye, lookat, vup, fov);
 
         La = vec3(0.4f, 0.4f, 0.4f);
         vec3 lightDirection(1, 1, 1), Le(2, 2, 2);
         lights.push_back(new Light(lightDirection, Le));
+        lights.push_back(new Light(vec3(2.0f, -1.0f, 1.0f), vec3(2, 2, 2)));
 
-        vec3 kd2(0.8f, 0.2f, 0.1f), ks2(1, 1, 1);
-        Material * material2 = new Material(kd2, ks2, 50);
-        objects.push_back(new Ellipsoid(vec3(0.0f, 0.0f, 0.0f), 0.2f, 0.1f, 0.3f, material2));        
+        vec3 kd1(0.1f, 0.9f, 0.1f), ks1(1, 1, 1);
+        Material * material1 = new Material(kd1, ks1, 50);
+        objects.push_back(new Ellipsoid(vec3(0.0f, 0.0f, 0.0f), 0.5f, 0.1f, 0.3f, material1));
+
+        vec3 kd2(0.9f, 0.1f, 0.1f), ks2(1, 1, 1);
+        Material * material2 = new Material(kd2, ks2, 50); 
+        objects.push_back(new Ellipsoid(vec3(0.4f, 0.4f, 0.4f), 0.1f, 0.3f, 0.4f, material2));
+     
+        vec3 kd3(0.1f, 0.1f, 0.9f), ks3(1, 1, 1);
+        Material * material3 = new Material(kd3, ks3, 50);
+        objects.push_back(new Ellipsoid(vec3(-0.3f, -0.5f, 0.0f), 0.2f, 0.5f, 0.3f, material3));
+
+
     }
 
     void render(std::vector<vec4>& image) {
