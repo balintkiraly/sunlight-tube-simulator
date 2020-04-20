@@ -72,17 +72,17 @@ struct Ellipsoid : public Intersectable {
         Hit hit;
         vec3 dist = ray.start - center;
 
-        float a = powf(ray.dir.x, 2) / (A * A)
-            + (powf(ray.dir.y, 2) / (B * B))
-            + (powf(ray.dir.z, 2) / (C * C));
+        float a = powf(ray.dir.x, 2) / powf(A, 2)
+            + powf(ray.dir.y, 2) / powf(B, 2)
+            + powf(ray.dir.z, 2) / powf(C, 2);
         
-        float b = 2.0f * ((dist.x * ray.dir.x) / (A * A)
-            + (dist.y * ray.dir.y) / (B * B)
-            + (dist.z * ray.dir.z) / (C * C));
+        float b = 2.0f * ((dist.x * ray.dir.x) / powf(A, 2)
+            + (dist.y * ray.dir.y) / powf(B, 2)
+            + (dist.z * ray.dir.z) / powf(C, 2));
         
-        float c = powf(dist.x, 2) / (A * A)
-            + powf(dist.y, 2) / (B * B)
-            + powf(dist.z, 2) / (C * C)
+        float c = powf(dist.x, 2) / powf(A, 2)
+            + powf(dist.y, 2) / powf(B, 2)
+            + powf(dist.z, 2) / powf(C, 2)
             - 1.0f;
         
         float discr = b * b - 4.0f * a * c;
@@ -105,6 +105,57 @@ struct Ellipsoid : public Intersectable {
                 (hit.position - center).x / (A * A),
                 (hit.position - center).y / (B * B),
                 (hit.position - center).z / (C * C)
+            )
+        ); 
+        hit.material = material;
+        return hit;
+    }
+};
+
+struct Hiperboloid : public Intersectable {
+    vec3 center;
+    float A, B, C, cutY;
+
+    Hiperboloid(const vec3& _center, float _A, float _B, float _C, Material* _material, float _cutY = 1000) {
+        center = _center;
+        A = _A;
+        B = _B;
+        C = _C;
+        cutY = _cutY;
+        material = _material;
+    }
+
+    Hit intersect(const Ray& ray) {
+        Hit hit;
+        vec3 dist = ray.start - center;
+
+		vec3 d = ray.dir;
+		vec3 s = ray.dir;
+
+		float a = powf(d.x, 2) / (A * A) + powf(d.y, 2) / (B * B) - powf(d.z, 2) / (C * C);
+		float b = 2.0f * (dist.x * d.x  / (A * A) + dist.y * d.y/ (B * B)  - dist.z * d.z / (C * C));
+		float c = powf(dist.x, 2) / (A * A)  + powf(dist.y, 2)/ (B * B) - powf(dist.z, 2) / (C * C) - 1;
+        
+        float discr = b * b - 4.0f * a * c;
+        if (discr < 0.0f) return hit;
+        
+        float sqrt_discr = sqrt(discr);
+        
+        float t1 = (-b + sqrt_discr) / 2.0f / a;
+        float t2 = (-b - sqrt_discr) / 2.0f / a;
+        
+        if (t1 <= 0) return hit;
+        
+        hit.t = (t2 > 0) ? t2 : t1;
+        hit.position = ray.start + ray.dir * hit.t;
+
+        if(hit.position.y > cutY) return Hit();
+
+        hit.normal = normalize(
+            vec3(
+                (hit.position - center).x / (A * A),
+                (hit.position - center).y / (B * B),
+                -1.0f * (hit.position - center).z / (C * C)
             )
         ); 
         hit.material = material;
@@ -149,7 +200,7 @@ class Scene {
     vec3 La;
 public:
     void build() {
-        vec3 eye = vec3(0, 0, 2.5f), vup = vec3(0, 1, 0.1f), lookat = vec3(0, 0.4f, 0);
+        vec3 eye = vec3(0, -0.4f, 2.5f), vup = vec3(0, 1, 0.1f), lookat = vec3(0, 0.4f, 0);
         float fov = 45 * M_PI / 180;
         camera.set(eye, lookat, vup, fov);
 
@@ -159,19 +210,19 @@ public:
 
         vec3 kd1(0.05f, 0.6f, 0.05f), ks1(1, 1, 1);
         Material * material1 = new RoughMaterial(kd1, ks1, 50);
-        objects.push_back(new Ellipsoid(vec3(-0.1f, -0.1f, 1.0f), 0.3f, 0.1f, 0.3f, material1));
+        objects.push_back(new Ellipsoid(vec3(-0.35f, -0.35f, 0.15f), 0.3f, 0.15f, 0.3f, material1));
 
         vec3 kd2(0.7f, 0.2f, 0.2f), ks2(1, 1, 1);
         Material * material2 = new RoughMaterial(kd2, ks2, 50); 
-        objects.push_back(new Ellipsoid(vec3(-0.1f, 0.2f, 0.0f), 0.1f, 0.3f, 0.4f, material2));
-     
+        objects.push_back(new Ellipsoid(vec3(-0.1f, -0.2f, -0.35f), 0.1f, 0.3f, 0.2f, material2));
+
         vec3 n(0.17f, 0.35f, 1.5f), kappa(3.1f, 2.7f, 1.9f);
         Material * reflectiveMaterial = new ReflectiveMaterial(n, kappa);
-        objects.push_back(new Ellipsoid(vec3(0.4f, 0.25f, 0.4f), 0.2f, 0.5f, 0.3f, reflectiveMaterial));
+        objects.push_back(new Ellipsoid(vec3(0.4f, 0.05f, -0.2f), 0.2f, 0.5f, 0.3f, reflectiveMaterial));
 
         vec3 kd3(0.8f, 0.6f, 0.2f), ks3(1, 1, 1);
         Material * material3 = new RoughMaterial(kd3, ks3, 50); 
-        objects.push_back(new Ellipsoid(vec3(0.0f, 2.15f, 0.0f), 2.1f, 2.5f, 6.6f, material3, 3.5f));
+        objects.push_back(new Ellipsoid(vec3(0.0f, 0.45f, 0.0f), 4.9f, 1.0f, 4.9f, material3, 1.44f));
     }
 
     void render(std::vector<vec4>& image) {
