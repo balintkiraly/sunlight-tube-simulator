@@ -3,10 +3,37 @@
 //=============================================================================================
 #include "framework.h"
 
+enum MaterialType { ROUGH, REFLECTIVE };
+
 struct Material {
     vec3 ka, kd, ks;
-    float  shininess;
-    Material(vec3 _kd, vec3 _ks, float _shininess) : ka(_kd * M_PI), kd(_kd), ks(_ks) { shininess = _shininess; }
+    float shininess;
+    vec3 F0;
+    MaterialType type;
+
+    Material(MaterialType t) { type = t; }
+};
+
+struct RoughMaterial : Material {
+    RoughMaterial(vec3 _kd, vec3 _ks, float _shininess) : Material(ROUGH) {
+        ka = _kd * M_PI;
+        kd = _kd;
+        ks = _ks;
+        shininess = _shininess;
+    }
+};
+
+struct ReflectiveMaterial : Material {
+    ReflectiveMaterial(vec3 n, vec3 kappa) : Material(REFLECTIVE) {
+        vec3 one(1,1,1);
+        vec3 num = ((n-one)*(n-one)+kappa*kappa);
+        vec3 denon = ((n+one)*(n+one)+kappa*kappa);
+        F0 = vec3(
+            num.x / denon.x,
+            num.y / denon.y,
+            num.z / denon.z
+        );
+    }    
 };
 
 struct Hit {
@@ -129,18 +156,16 @@ public:
         lights.push_back(new Light(vec3(2.0f, -1.0f, 1.0f), vec3(2, 2, 2)));
 
         vec3 kd1(0.1f, 0.9f, 0.1f), ks1(1, 1, 1);
-        Material * material1 = new Material(kd1, ks1, 50);
+        Material * material1 = new RoughMaterial(kd1, ks1, 50);
         objects.push_back(new Ellipsoid(vec3(0.0f, 0.0f, 0.0f), 0.5f, 0.1f, 0.3f, material1));
 
         vec3 kd2(0.9f, 0.1f, 0.1f), ks2(1, 1, 1);
-        Material * material2 = new Material(kd2, ks2, 50); 
-        objects.push_back(new Ellipsoid(vec3(0.4f, 0.4f, 0.4f), 0.1f, 0.3f, 0.4f, material2));
+        Material * material2 = new RoughMaterial(kd2, ks2, 50); 
+        objects.push_back(new Ellipsoid(vec3(-0.3f, -0.5f, 0.0f), 0.1f, 0.3f, 0.4f, material2));
      
-        vec3 kd3(0.1f, 0.1f, 0.9f), ks3(1, 1, 1);
-        Material * material3 = new Material(kd3, ks3, 50);
-        objects.push_back(new Ellipsoid(vec3(-0.3f, -0.5f, 0.0f), 0.2f, 0.5f, 0.3f, material3));
-
-
+        vec3 n(0.14f, 0.16f, 0.13f), kappa(4.1f, 2.3f, 3.1f);
+        Material * reflectiveMaterial = new ReflectiveMaterial(n, kappa);
+        objects.push_back(new Ellipsoid(vec3(0.4f, 0.5f, 0.4f), 0.2f, 0.5f, 0.3f, reflectiveMaterial));
     }
 
     void render(std::vector<vec4>& image) {
@@ -169,19 +194,33 @@ public:
     }
 
     vec3 trace(Ray ray, int depth = 0) {
+        if(depth > 5) return La;
         Hit hit = firstIntersect(ray);
         if (hit.t < 0) return La;
-        vec3 outRadiance = hit.material->ka * La;
-        for (Light * light : lights) {
-            Ray shadowRay(hit.position + hit.normal * epsilon, light->direction);
-            float cosTheta = dot(hit.normal, light->direction);
-            if (cosTheta > 0 && !shadowIntersect(shadowRay)) {    // shadow computation
-                outRadiance = outRadiance + light->Le * hit.material->kd * cosTheta;
-                vec3 halfway = normalize(-ray.dir + light->direction);
-                float cosDelta = dot(hit.normal, halfway);
-                if (cosDelta > 0) outRadiance = outRadiance + light->Le * hit.material->ks * powf(cosDelta, hit.material->shininess);
+        
+        vec3 outRadiance(0, 0, 0);
+
+        if (hit.material->type == ROUGH) {
+            outRadiance = hit.material->ka * La;
+            for (Light * light : lights) {
+                Ray shadowRay(hit.position + hit.normal * epsilon, light->direction);
+                float cosTheta = dot(hit.normal, light->direction);
+                if (cosTheta > 0 && !shadowIntersect(shadowRay)) {    // shadow computation
+                    outRadiance = outRadiance + light->Le * hit.material->kd * cosTheta;
+                    vec3 halfway = normalize(-ray.dir + light->direction);
+                    float cosDelta = dot(hit.normal, halfway);
+                    if (cosDelta > 0) outRadiance = outRadiance + light->Le * hit.material->ks * powf(cosDelta, hit.material->shininess);
+                }
             }
         }
+        if (hit.material->type == REFLECTIVE) {
+            vec3 reflectedDir = ray.dir - hit.normal * dot(hit.normal, ray.dir) * 2.0f;
+            float cosa = -dot(ray.dir, hit.normal);
+            vec3 one(1, 1, 1);
+            vec3 F = hit.material->F0 + (one - hit.material->F0) * powf(1-cosa, 5);
+            outRadiance = outRadiance + trace(Ray(hit.position + hit.normal * epsilon, reflectedDir), depth+1) * F;   
+        }
+
         return outRadiance;
     }
 };
