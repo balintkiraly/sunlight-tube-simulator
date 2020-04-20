@@ -26,8 +26,8 @@ struct RoughMaterial : Material {
 struct ReflectiveMaterial : Material {
     ReflectiveMaterial(vec3 n, vec3 kappa) : Material(REFLECTIVE) {
         vec3 one(1,1,1);
-        vec3 num = ((n-one)*(n-one)+kappa*kappa);
-        vec3 denon = ((n+one)*(n+one)+kappa*kappa);
+        vec3 num = (n - one) * (n - one) + kappa * kappa;
+        vec3 denon = (n + one) * (n + one) + kappa * kappa;
         F0 = vec3(
             num.x / denon.x,
             num.y / denon.y,
@@ -85,7 +85,7 @@ struct Ellipsoid : public Intersectable {
             + powf(dist.z, 2) / powf(C, 2)
             - 1.0f;
         
-        float discr = b * b - 4.0f * a * c;
+        float discr = powf(b, 2) - 4.0f * a * c;
         if (discr < 0.0f) return hit;
         
         float sqrt_discr = sqrt(discr);
