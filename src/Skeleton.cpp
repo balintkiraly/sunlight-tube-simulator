@@ -57,13 +57,14 @@ public:
 
 struct Ellipsoid : public Intersectable {
     vec3 center;
-    float A, B, C;
+    float A, B, C, cutY;
 
-    Ellipsoid(const vec3& _center, float _A, float _B, float _C, Material* _material) {
+    Ellipsoid(const vec3& _center, float _A, float _B, float _C, Material* _material, float _cutY = 5) {
         center = _center;
         A = _A;
         B = _B;
         C = _C;
+        cutY = _cutY;
         material = _material;
     }
 
@@ -96,6 +97,8 @@ struct Ellipsoid : public Intersectable {
         
         hit.t = (t2 > 0) ? t2 : t1;
         hit.position = ray.start + ray.dir * hit.t;
+
+        if(hit.position.y > cutY) return Hit();
 
         hit.normal = normalize(
             vec3(
@@ -151,9 +154,8 @@ public:
         camera.set(eye, lookat, vup, fov);
 
         La = vec3(0.4f, 0.4f, 0.4f);
-        vec3 lightDirection(1, 1, 1), Le(2, 2, 2);
+        vec3 lightDirection(1, 8, 1), Le(2, 2, 2);
         lights.push_back(new Light(lightDirection, Le));
-        lights.push_back(new Light(vec3(2.0f, -1.0f, 1.0f), vec3(2, 2, 2)));
 
         vec3 kd1(0.1f, 0.9f, 0.1f), ks1(1, 1, 1);
         Material * material1 = new RoughMaterial(kd1, ks1, 50);
@@ -169,7 +171,7 @@ public:
 
         vec3 kd3(0.8f, 0.6f, 0.2f), ks3(1, 1, 1);
         Material * material3 = new RoughMaterial(kd3, ks3, 50); 
-        objects.push_back(new Ellipsoid(vec3(1.3f, 1.0f, 6.0f), 1.1f, 1.3f, 2.4f, material3));
+        objects.push_back(new Ellipsoid(vec3(0.0f, 2.15f, 0.0f), 2.1f, 2.5f, 6.6f, material3, 3.5f));
     }
 
     void render(std::vector<vec4>& image) {
