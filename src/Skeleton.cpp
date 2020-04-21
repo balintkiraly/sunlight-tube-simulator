@@ -84,7 +84,7 @@ struct Ellipsoid : public Intersectable {
             + powf(dist.y, 2) / powf(B, 2)
             + powf(dist.z, 2) / powf(C, 2)
             - 1.0f;
-        
+
         float discr = powf(b, 2) - 4.0f * a * c;
         if (discr < 0.0f) return hit;
         
@@ -105,57 +105,6 @@ struct Ellipsoid : public Intersectable {
                 (hit.position - center).x / (A * A),
                 (hit.position - center).y / (B * B),
                 (hit.position - center).z / (C * C)
-            )
-        ); 
-        hit.material = material;
-        return hit;
-    }
-};
-
-struct Hiperboloid : public Intersectable {
-    vec3 center;
-    float A, B, C, cutY;
-
-    Hiperboloid(const vec3& _center, float _A, float _B, float _C, Material* _material, float _cutY = 1000) {
-        center = _center;
-        A = _A;
-        B = _B;
-        C = _C;
-        cutY = _cutY;
-        material = _material;
-    }
-
-    Hit intersect(const Ray& ray) {
-        Hit hit;
-        vec3 dist = ray.start - center;
-
-		vec3 d = ray.dir;
-		vec3 s = ray.dir;
-
-		float a = powf(d.x, 2) / (A * A) + powf(d.y, 2) / (B * B) - powf(d.z, 2) / (C * C);
-		float b = 2.0f * (dist.x * d.x  / (A * A) + dist.y * d.y/ (B * B)  - dist.z * d.z / (C * C));
-		float c = powf(dist.x, 2) / (A * A)  + powf(dist.y, 2)/ (B * B) - powf(dist.z, 2) / (C * C) - 1;
-        
-        float discr = b * b - 4.0f * a * c;
-        if (discr < 0.0f) return hit;
-        
-        float sqrt_discr = sqrt(discr);
-        
-        float t1 = (-b + sqrt_discr) / 2.0f / a;
-        float t2 = (-b - sqrt_discr) / 2.0f / a;
-        
-        if (t1 <= 0) return hit;
-        
-        hit.t = (t2 > 0) ? t2 : t1;
-        hit.position = ray.start + ray.dir * hit.t;
-
-        if(hit.position.y > cutY) return Hit();
-
-        hit.normal = normalize(
-            vec3(
-                (hit.position - center).x / (A * A),
-                (hit.position - center).y / (B * B),
-                -1.0f * (hit.position - center).z / (C * C)
             )
         ); 
         hit.material = material;
